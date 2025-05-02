@@ -19,9 +19,13 @@
 [![GitHub star chart](https://img.shields.io/github/stars/NVIDIA/Isaac-GR00T?style=flat-square)](https://star-history.com/#NVIDIA/Isaac-GR00T)
 [![Open Issues](https://img.shields.io/github/issues-raw/NVIDIA/Isaac-GR00T?style=flat-square)](https://github.com/NVIDIA/Isaac-GR00T/issues)
 
+- [x] [SimXArm](https://github.com/huggingface/lerobot?tab=readme-ov-file#examples-of-pretrained-models-on-simulation-environments) supported
 - [ ] Blender porting/visualization
 
-## NVIDIA Isaac GR00T N1
+## CSI/NVIDIA Isaac GR00T N1
+
+> [!NOTE]
+> We are supporting a domestic version of GR00T N1 model. And we will further domestic the GP version of rendering/visualization/SFT of the data and model.
 
 <div align="center">
 <img src="media/robot-demo.gif" width="800" alt="NVIDIA Isaac GR00T N1 Header">
