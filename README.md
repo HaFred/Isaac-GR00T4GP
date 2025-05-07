@@ -1,16 +1,10 @@
 - [x] [SimXArm](https://github.com/huggingface/lerobot?tab=readme-ov-file#examples-of-pretrained-models-on-simulation-environments) supported
 - [ ] Blender porting/visualization
 
-## CSI/NVIDIA Isaac GR00T N1
+## CSI Isaac GR00T N1
 
 > [!NOTE]
 > We are supporting a domestic version of GR00T N1 model. And we will further domestic the GP version of rendering/visualization/SFT of the data and model.
-
-<div align="center">
-<img src="media/robot-demo.gif" width="800" alt="NVIDIA Isaac GR00T N1 Header">
-</div>
-
-<div align="center">
 
 
   <img src="media/header_compress.png" width="800" alt="NVIDIA Isaac GR00T N1 Header">
@@ -30,6 +24,12 @@
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![GitHub star chart](https://img.shields.io/github/stars/NVIDIA/Isaac-GR00T?style=flat-square)](https://star-history.com/#NVIDIA/Isaac-GR00T)
 [![Open Issues](https://img.shields.io/github/issues-raw/NVIDIA/Isaac-GR00T?style=flat-square)](https://github.com/NVIDIA/Isaac-GR00T/issues)
+
+## NVIDIA Isaac GR00T N1
+
+<div align="center">
+<img src="media/robot-demo.gif" width="800" alt="NVIDIA Isaac GR00T N1 Header">
+</div>
 
 NVIDIA Isaac GR00T N1 is the world's first open foundation model for generalized humanoid robot reasoning and skills. This cross-embodiment model takes multimodal input, including language and images, to perform manipulation tasks in diverse environments.
 
