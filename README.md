@@ -4,7 +4,7 @@
 ## CSI Isaac GR00T N1
 
 > [!NOTE]
-> We are supporting a domestic version of GR00T N1 model. And we will further domestic the GP version of rendering/visualization/SFT of the data and model.
+> We are supporting a domestic version of GR00T N1 model. And we will further make domestic the GP version of rendering/visualization/SFT of the data and model.
 
 
   <img src="media/header_compress.png" width="800" alt="NVIDIA Isaac GR00T N1 Header">
