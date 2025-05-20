@@ -1,10 +1,12 @@
 - [x] [SimXArm](https://github.com/huggingface/lerobot?tab=readme-ov-file#examples-of-pretrained-models-on-simulation-environments) supported
 - [ ] Blender porting/visualization
+* A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
+* An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
 
 ## CSI Isaac GR00T N1
 
 > [!NOTE]
-> We are supporting a domestic version of GR00T N1 model. And we will further make domestic the GP version of rendering/visualization/SFT of the data and model.
+> We are supporting a domestic version of GR00T N1 model. And we will further domestic the GP version of rendering/visualization/SFT of the data and model.
 
 
   <img src="media/header_compress.png" width="800" alt="NVIDIA Isaac GR00T N1 Header">
