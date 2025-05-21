@@ -1,18 +1,19 @@
-- [x] [SimXArm](https://github.com/huggingface/lerobot?tab=readme-ov-file#examples-of-pretrained-models-on-simulation-environments) supported
-- [ ] Blender porting/visualization
-* A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
-* An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
-
 ## CSI Isaac GR00T N1
 
 > [!NOTE]
-> We are supporting a domestic version of GR00T N1 model. And we will further domestic the GP version of rendering/visualization/SFT of the data and model.
+> We are supporting a domestic version of GR00T N1 model. And we are developing the GP version of rendering/visualization/SFT of the data and model.
 
+- [x] [SimXArm](https://github.com/huggingface/lerobot?tab=readme-ov-file#examples-of-pretrained-models-on-simulation-environments) supported
+- [ ] GP version of GR00T N1
+- [ ] Blender porting/visualization
 
-  <img src="media/header_compress.png" width="800" alt="NVIDIA Isaac GR00T N1 Header">
-  
+### Enhancement
+* A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
+* An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
+---
+
+<img src="media/header_compress.png" width="800" alt="NVIDIA Isaac GR00T N1 Header">
   <!-- --- -->
-  
   <p style="font-size: 1.2em;">
     <a href="https://developer.nvidia.com/isaac/gr00t"><strong>Website</strong></a> | 
     <a href="https://huggingface.co/nvidia/GR00T-N1-2B"><strong>Model</strong></a> |
