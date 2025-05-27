@@ -6,6 +6,7 @@
 ### Enhancements
 * A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
 * Data pyramid curation is provided [here](datapyramid_curation/README.md).
+* TTS for VLA with the visual CoT included, the idea is to mitigate the redundant computations in VLA, as shown [here](gr00t/README.md). 
 * An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
 
 ### TODO List
