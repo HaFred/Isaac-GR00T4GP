@@ -7,8 +7,9 @@
 - [ ] GP version of GR00T N1
 - [ ] Blender porting/visualization
 
-### Enhancement
+### Enhancements
 * A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
+* Data pyramid curation is provided [here](datapyramid_curation/README.md).
 * An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
 ---
 
