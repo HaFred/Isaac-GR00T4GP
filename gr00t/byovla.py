@@ -58,14 +58,6 @@ def perturb_gaussian_blur(image, mask, kernel_size=25):
     return blurred_region
 
 
-def encode_image(image_path):
-    """
-    Used for GPT4-o API, encode with url
-    """
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
-
-
 def kimi(image_path, lang_ins):
     # Read in examples for few-shot learning
     # testtime_image = encode_image(img_path)
@@ -117,14 +109,12 @@ def kimi(image_path, lang_ins):
     model_path = "moonshotai/Kimi-VL-A3B-Instruct"
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        cache_dir="/data1/fredhong/hf_models",
         torch_dtype="auto",
         device_map="auto",
         trust_remote_code=True,
     )
     processor = AutoProcessor.from_pretrained(
         model_path, 
-        cache_dir="/data1/fredhong/hf_models",
         trust_remote_code=True
     )
 
