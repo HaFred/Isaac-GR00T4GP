@@ -6,8 +6,9 @@ Here, the task-irrelevant regions are extracted as follows.
 ```bash
 python byovla.py
 ```
+<img width="493" alt="test_byovla" src="https://github.com/user-attachments/assets/79d96780-94a9-4b84-b728-8833d7003c36" />
 
-And it returns
+This script dissects the picture above and returns:
 
 ```log
 init vlm output:
