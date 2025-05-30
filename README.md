@@ -6,6 +6,38 @@
 ### Enhancements
 * A xarm mujoco-based rendering can be found [here](renderings/README.md), both offscreen or x11 supported.
 * Data pyramid curation is provided [here](datapyramid_curation/README.md).
+  
+<table border="0" style="width: 100%; text-align: left; table-layout:fixed; margin-top: 20px;">
+    <tr>
+        <th>Initial Input Frame</th>
+        <th>Ending Input Frame</th>
+        <th>Groundtruth <br>(from Omniverse)</th>
+        <th>Pretrained Wan2.1-FLF2V-14B</th>
+        <th>Pretrained Wan2.1-Fun-V1.1-1.3B-InP</th>
+        <th>Finetuned Wan2.1-Fun-V1.1-1.3B-InP</th>
+    </tr>
+      <td>
+          <image src="https://github.com/user-attachments/assets/105a35cc-5844-4f2d-8029-b0b60e26fbb1" width="100%" controls autoplay loop></image>
+      </td>
+      <td>
+          <image src="https://github.com/user-attachments/assets/6691075c-6fc8-49fb-b3fc-9467e0c8f74d" width="100%" controls autoplay loop></image>
+      </td>
+       <td>
+          <video src="https://github.com/user-attachments/assets/1e3bda56-3b6b-4b92-9a90-3802d23a73f0" width="100%" controls autoplay loop></video>
+     </td>
+       <td>
+          <video src="https://github.com/user-attachments/assets/702ae91f-a138-4847-8229-5550d447f1ee" width="100%" controls autoplay loop></video>
+     </td>
+    <td>
+          <video src="https://github.com/user-attachments/assets/438905b7-e11b-45a7-87f5-d98b4e2fd2fd" width="100%" controls autoplay loop></video>
+     </td>
+    <td>
+          <video src="https://github.com/user-attachments/assets/34778cd5-fb5b-4a58-bb14-1e0c67784e6a" width="100%" controls autoplay loop></video>
+     </td>
+  <tr>
+</table>
+To curate neural trajectories data for training GR00T-N1 VLA model, we need to finetune a video-generative model with CSI internal data flywheel, here we show an example case with Wan2.1-Fun model 1.3B variant for finetuning. We can see that, the last column (finetuned one) looks pretty much the same as the ground truth, whereas neithere the pretrained Wan2.1 larger variant nor the pretrained Wan2.1-Fun model can provide meaningful inference conditioned on the initial-ending frames pair.
+
 * TTS for VLA with the visual CoT included, the idea is to mitigate the redundant computations in VLA, as shown [here](gr00t/README.md). 
 * An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
 
