@@ -36,7 +36,8 @@
      </td>
   <tr>
 </table>
-To curate neural trajectories data for training GR00T-N1 VLA model, we need to finetune a video-generative model with CSI internal data flywheel, here we show an example case with Wan2.1-Fun model 1.3B variant for finetuning. We can see that, the last column (finetuned one) looks pretty much the same as the ground truth, whereas neithere the pretrained Wan2.1 larger variant nor the pretrained Wan2.1-Fun model can provide meaningful inference conditioned on the initial-ending frames pair.
+
+> To curate neural trajectories data for training GR00T-N1 VLA model, we need to finetune a video-generative model with CSI internal data flywheel, here we show an example case with Wan2.1-Fun model 1.3B variant for finetuning. We can see that, the last column (finetuned one) looks pretty much the same as the ground truth, whereas neithere the pretrained Wan2.1 larger variant nor the pretrained Wan2.1-Fun model can provide meaningful inference conditioned on the initial-ending frames pair.
 
 * TTS for VLA with the visual CoT included, the idea is to mitigate the redundant computations in VLA, as shown [here](gr00t/README.md). 
 * An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
