@@ -1,7 +1,7 @@
 ## Visual CoT for VLA (BYOVLA)
 We refer to BYOVLA to implement a visual CoT that excludes the irrelvant elements before VLA conduct the thinking and expose action policy.
 
-Here, the task-irrelevant regions are extracted as follows.
+Here, for a given instruction `place the carrot on plate`, run the following script to extract the task-irrelevant regions.
 
 ```bash
 python byovla.py
