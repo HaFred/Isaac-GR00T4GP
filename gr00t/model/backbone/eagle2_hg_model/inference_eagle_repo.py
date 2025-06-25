@@ -259,6 +259,10 @@ def prepare(
         else:
             query = query.replace("<image>", image_tokens, 1)
 
+    # TODO now with lavida pretrainedfast tokenizer
+    # the query <|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n<img><IMG_CONTEXT></img>\npick the pear from the counter and place it in the plate<|im_end|>\n<|im_start|>assistant\n
+    # not correct as no image token (need one and only one), check this
+
     model_inputs = tokenizer(query, return_tensors="pt")
 
     return (
@@ -275,6 +279,7 @@ class EagleProcessor:
         model_spec: Union[ModelSpecificValues, None] = None,
         max_input_tiles: int = 1,
         use_local_eagle_hg_model: bool = True,
+        use_lavida_tokenizer: bool = False
     ):
         # This defaults use local eagle hg model card
         if model_path is None or use_local_eagle_hg_model:
@@ -297,9 +302,15 @@ class EagleProcessor:
                 num_image_token=64,
             )
 
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=True, use_fast=False
-        )
+        if not use_lavida_tokenizer:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, trust_remote_code=True, use_fast=False
+            )
+        else:
+            # for lavida tokenizer
+            tokenizer = AutoTokenizer.from_pretrained(
+                "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37/"
+            )
         tokens_to_keep = ["<box>", "</box>", "<ref>", "</ref>"]
         tokenizer.additional_special_tokens = [
             item for item in tokenizer.additional_special_tokens if item not in tokens_to_keep

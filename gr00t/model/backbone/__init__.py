@@ -14,3 +14,4 @@
 # limitations under the License.
 
 from .eagle_backbone import EagleBackbone  # noqa: F401
+from .diffusion_backbone import DiffusionLMBackbone

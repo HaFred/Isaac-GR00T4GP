@@ -29,6 +29,10 @@ from .action_head.flow_matching_action_head import (
     FlowmatchingActionHeadConfig,
 )
 from .backbone import EagleBackbone
+from .backbone import DiffusionLMBackbone
+from .backbone.llada.mm_utils import process_images
+
+from accelerate import load_checkpoint_and_dispatch
 
 BACKBONE_FEATURE_KEY = "backbone_features"
 ACTION_KEY = "action_pred"
@@ -41,6 +45,7 @@ N_COLOR_CHANNELS = 3
 @dataclass
 class GR00T_N1Config(PretrainedConfig):
     model_type = "gr00t_n1"
+    vlm_model_type = "eagle2"
     backbone_cfg: dict = field(init=False, metadata={"help": "Backbone configuration."})
 
     action_head_cfg: dict = field(init=False, metadata={"help": "Action head configuration."})
@@ -71,6 +76,7 @@ class GR00T_N1(PreTrainedModel):
         self,
         config: GR00T_N1Config,
         local_model_path: str,
+        # vlm_model_type: str  # this a flag helps us switch from the vanilla version to DVLM
     ):
         assert isinstance(config.backbone_cfg, dict)
         assert isinstance(config.action_head_cfg, dict)
@@ -78,7 +84,34 @@ class GR00T_N1(PreTrainedModel):
         super().__init__(config)
         self.local_model_path = local_model_path
 
-        self.backbone = EagleBackbone(**config.backbone_cfg)
+        if config.vlm_model_type != "lavida":
+            self.backbone = EagleBackbone(**config.backbone_cfg)
+        else:
+            lavida_kwargs = {
+                'vision_kwargs': {'mm_vision_tower': 'google/siglip-so400m-patch14-384', 'mm_resampler_type': None, 'mm_projector_type': 'mlp2x_gelu', 'mm_hidden_size': 1152, 'use_mm_proj': True}, 
+                # 'device_map': 'auto',   # by default == 'meta'
+                'torch_dtype': torch.bfloat16
+            }
+            self.backbone = DiffusionLMBackbone.from_pretrained(
+                # "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37",
+                "jacklishufan/lavida-llada-v1.0-instruct",
+                low_cpu_mem_usage=True, local_files_only=True, 
+                attn_implementation='eager', 
+                **lavida_kwargs
+                # "/data1/fredhong/hf_models/hub/models--hbXNov--lavida-llada-reason/snapshots/246b218b0444bc9edfd09ab0e05b072db96e5e2a/"
+                # "hbXNov/lavida-llada-reason"
+            )
+            self.backbone.tie_weights()
+            self.backbone = load_checkpoint_and_dispatch(
+                self.backbone, 
+                "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37", 
+                device_map='auto'
+            )
+            raw_lavida_wid, raw_lavida_hei, img_size = 692, 704, 256
+            self.backbone.config.image_grid_pinpoints = \
+            list(map(lambda l: [int(l[0] / raw_lavida_wid * img_size), int(l[1] / raw_lavida_hei * img_size)], self.backbone.config.image_grid_pinpoints))
+            self.backbone.config.scale_ratio = raw_lavida_wid / img_size  # this for tuning the patch division in process_anyres_image()
+        self.backbone_type = config.vlm_model_type
         action_head_cfg = FlowmatchingActionHeadConfig(**config.action_head_cfg)
         self.action_head = FlowmatchingActionHead(action_head_cfg)
 
@@ -172,7 +205,30 @@ class GR00T_N1(PreTrainedModel):
         self,
         inputs: dict,
     ) -> BatchFeature:
+        # # for lavida input w/o eagle2 proc, uncomment below and commetn the inputs assign
+        # raw_image = inputs.pop("video.lavida_proc_frame", None)
+        # image_to_process = raw_image
+        # image_to_process = inputs["pixel_values"]
+        # backbone_inputs["pixel_values"] = raw_image
+
+        # get universal backbone inputs
         backbone_inputs, action_inputs = self.prepare_input(inputs)
+
+        # for lavida input w/o eagle2 proc, commetn the inputs assign
+        # using the eagle2 robot input to be processed by the lavida processor
+        if self.backbone_type == "lavida":
+            # img transform: originally for PIL, now scale pixel_values back to (0,1) for the sake of image proc siglip encoder
+            image_to_process = ((inputs["pixel_values"] + 1) * 255 / 2).to(torch.uint8)
+
+            # lavida img processing discarding the llava patchifying, to follow eagle2 siglip enc fashion
+            # # lavida processor to patchify the input frames
+            # image_processor = self.backbone.get_vision_tower().image_processor
+            # _config = self.backbone.config
+            # image_tensor = process_images(image_to_process, image_processor, _config)
+            # image_tensor = [_image.to(dtype=torch.bfloat16, device="cuda") for _image in image_tensor]
+            # backbone_inputs["pixel_values"] = image_tensor[0]
+            backbone_inputs["raw_image_sizes"] = [image_to_process.shape[-2:]]
+
         # Because the behavior of backbones remains the same for training and inference, we can use `forward` for backbones.
         backbone_outputs = self.backbone(backbone_inputs)
         action_head_outputs = self.action_head.get_action(backbone_outputs, action_inputs)
@@ -197,11 +253,19 @@ class GR00T_N1(PreTrainedModel):
         return backbone_inputs, action_inputs
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: str, **kwargs):
+    def from_pretrained(
+        cls, 
+        pretrained_model_name_or_path: str,
+        model_type: str,
+        **kwargs
+    ):
+        # import pdb; pdb.set_trace()
         tune_visual = kwargs.pop("tune_visual", True)
         tune_llm = kwargs.pop("tune_llm", False)
         tune_projector = kwargs.pop("tune_projector", True)
         tune_diffusion_model = kwargs.pop("tune_diffusion_model", True)
+        # kwargs["vlm_model_type"] = model_type  # by default is eagle2, this kwarg is to enable lavida dllm as backbone
+        print(kwargs)
 
         print(f"Loading pretrained dual brain from {pretrained_model_name_or_path}")
         print(f"Tune backbone vision tower: {tune_visual}")
@@ -221,13 +285,17 @@ class GR00T_N1(PreTrainedModel):
             )
             local_model_path = pretrained_model_name_or_path
 
+        # TODO now the model_type arg cannot control config.json
+        #   as modifying the json file in the model_path looks awkward
+        #   need to solve this and pass backbone model control northernbound back to policy.py
         pretrained_model = super().from_pretrained(
             local_model_path, local_model_path=local_model_path, **kwargs
         )
 
-        pretrained_model.backbone.set_trainable_parameters(
-            tune_visual=tune_visual, tune_llm=tune_llm
-        )
+        if model_type == "eagle2":
+            pretrained_model.backbone.set_trainable_parameters(
+                tune_visual=tune_visual, tune_llm=tune_llm
+            )
         pretrained_model.action_head.set_trainable_parameters(
             tune_projector=tune_projector, tune_diffusion_model=tune_diffusion_model
         )

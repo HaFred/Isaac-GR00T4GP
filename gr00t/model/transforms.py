@@ -90,7 +90,7 @@ class GR00TTransform(InvertibleModalityTransform):
     default_instruction: str = Field(default="Perform the default behavior.")
     max_state_dim: int
     max_action_dim: int
-    vlm_processor: EagleProcessor = Field(default=EagleProcessor())
+    vlm_processor: EagleProcessor
     state_horizon: int
     action_horizon: int
 

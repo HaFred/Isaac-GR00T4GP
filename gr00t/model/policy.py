@@ -65,6 +65,7 @@ class Gr00tPolicy(BasePolicy):
     def __init__(
         self,
         model_path: str,
+        model_type: Optional[str],
         embodiment_tag: Union[str, EmbodimentTag],
         modality_config: Dict[str, ModalityConfig],
         modality_transform: ComposedModalityTransform,
@@ -76,6 +77,7 @@ class Gr00tPolicy(BasePolicy):
 
         Args:
             model_path (str): Path to the model checkpoint directory or the huggingface hub id.
+            model_type (str):
             modality_config (Dict[str, ModalityConfig]): The modality config for the model.
             modality_transform (ComposedModalityTransform): The modality transform for the model.
             embodiment_tag (Union[str, EmbodimentTag]): The embodiment tag for the model.
@@ -104,8 +106,11 @@ class Gr00tPolicy(BasePolicy):
         else:
             self.embodiment_tag = embodiment_tag
 
-        # Load model
-        self._load_model(model_path)
+        if model_type is None:
+            # Load model
+            self._load_model(model_path)
+        else:
+            self._load_model(model_path, model_type)
         # Load transforms
         self._load_metadata(self.model_path / "experiment_cfg")
         # Load horizons
@@ -168,9 +173,14 @@ class Gr00tPolicy(BasePolicy):
         if not is_batch:
             observations = unsqueeze_dict_values(observations)
 
-        normalized_input = unsqueeze_dict_values
+        # normalized_input = unsqueeze_dict_values
         # Apply transforms
+        # TODO if observations is dog demo from lavida, do not transform
         normalized_input = self.apply_transforms(observations)
+
+        # # for lavida input w/o eagle2 proc
+        # tomergedict = {"video.lavida_proc_frame": observations["video.lavida_proc_frame"]}
+        # normalized_input = {**normalized_input, **tomergedict}
 
         normalized_action = self._get_action_from_normalized_input(normalized_input)
         unnormalized_action = self._get_unnormalized_action(normalized_action)
@@ -230,8 +240,8 @@ class Gr00tPolicy(BasePolicy):
                 return False
         return True
 
-    def _load_model(self, model_path):
-        model = GR00T_N1.from_pretrained(model_path, torch_dtype=COMPUTE_DTYPE)
+    def _load_model(self, model_path, model_type=None):
+        model = GR00T_N1.from_pretrained(model_path, torch_dtype=COMPUTE_DTYPE, model_type=model_type)
         model.eval()  # Set model to eval mode
         model.to(device=self.device)  # type: ignore
 
