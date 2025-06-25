@@ -5,7 +5,7 @@ os.environ["HF_HOME"] = "/data1/fredhong/hf_models/"
 os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 import sys
-sys.path.append("/home/fredhong/gr00t4gp-origin/") # gr00t env pip install, need to specify otherwise it goes into the 4gp-latest repo
+sys.path.append("/home/fredhong/Isaac-GR00T4GP/") # gr00t env pip install, need to specify otherwise it goes into the 4gp-latest repo
 import torch
 import gr00t
 
