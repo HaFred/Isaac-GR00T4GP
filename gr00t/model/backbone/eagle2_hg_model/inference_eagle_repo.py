@@ -309,7 +309,7 @@ class EagleProcessor:
         else:
             # for lavida tokenizer
             tokenizer = AutoTokenizer.from_pretrained(
-                "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37/"
+                "/data0/fredhong/hf_models/hub/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37/"
             )
         tokens_to_keep = ["<box>", "</box>", "<ref>", "</ref>"]
         tokenizer.additional_special_tokens = [

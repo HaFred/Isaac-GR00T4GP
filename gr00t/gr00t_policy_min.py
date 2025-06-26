@@ -1,11 +1,11 @@
 """minimized script for runnging policy inference, aiming to build improved SYSTEM#2 upon it."""
 
 import os
-os.environ["HF_HOME"] = "/data1/fredhong/hf_models/"
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["HF_HOME"] = "/data0/fredhong/hf_models/"
+os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 
 import sys
-sys.path.append("/home/fredhong/Isaac-GR00T4GP/") # gr00t env pip install, need to specify otherwise it goes into the 4gp-latest repo
+sys.path.append("/home/fredhong/gr00t4gp-origin/") # gr00t env pip install, need to specify otherwise it goes into the 4gp-latest repo
 import torch
 import gr00t
 
@@ -13,12 +13,15 @@ from gr00t.data.dataset import LeRobotSingleDataset
 from gr00t.model.policy import Gr00tPolicy
 from gr00t.experiment.data_config import DATA_CONFIG_MAP, Gr1ArmsOnlyDataConfig
 from gr00t.model.backbone.eagle2_hg_model.inference_eagle_repo import EagleProcessor, ModelSpecificValues
-from gr00t.model.backbone.llada.mm_utils import process_images
-from gr00t.model.backbone.diffusion_backbone import DiffusionLMBackbone
+# from gr00t.model.backbone.llada.mm_utils import process_images
+# from gr00t.model.backbone.diffusion_backbone import DiffusionLMBackbone
 
 # selecting backbone vlm model 
 # VLM_MODEL = "lavida"  # if not specified, model will go with eagle2 by default
-MODEL_PATH = "/data0/gr00t"
+MODEL_PATH = "/data0/fredhong/hf_models/hub/gr00t/"
+# let the hf.tr handle the downloading to hf_home, if internet broken dunno this good
+# MODEL_PATH = "nvidia/GR00T-N1-2B"
+
 import json
 with open(os.path.join(MODEL_PATH, "config.json")) as json_file:
     VLM_MODEL = json.load(json_file)['vlm_model_type']
@@ -32,15 +35,20 @@ DATASET_PATH = "/home/fredhong/gr00t4gp-origin/demo_data/robot_sim.PickNPlace"
 
 
 # data_config = DATA_CONFIG_MAP["gr1_arms_only"]  # this by default goes to raw eagleprocessor, below we init a eagleprocessor instance but with pretrainedtokenizerfast
+# TODO ablate whether to fix num img token minimum
 model_spec = ModelSpecificValues(
     template="qwen2-chat",
-    num_image_token=1,
+    num_image_token=1,   # change from 64 to 1 compared with Eagle2
 ) if VLM_MODEL=="lavida" else None
 
-# I wanna use eagle2 tokenizer while using llavida model here
-VLM_MODEL = "eagle2"  # while making config json model type lavida
+# # I wanna use eagle2 tokenizer while using llavida model here
+# VLM_MODEL = "eagle2"  # while making config json model type lavida
 
-vlm_processor = EagleProcessor(model_spec=model_spec, use_lavida_tokenizer=VLM_MODEL=="lavida")
+# TODO whether to use lavida tokenzier or stay with eagle2 tokenizer in the 0-shot case, before transfer learning, now 0-shot
+vlm_processor = EagleProcessor(model_spec=model_spec, 
+                                use_lavida_tokenizer=False,
+                            #    use_lavida_tokenizer=VLM_MODEL=="lavida"
+                               )
 # if not pass in lavida vlm proc then by default eagleprocessor
 data_config = Gr1ArmsOnlyDataConfig(vlm_processor)
 
@@ -60,11 +68,11 @@ step_data = dataset[0]
 IMG_SIZE = step_data["video.ego_view"].shape[-2]
 
 
-# HERE SWITCH THE RAW PickNPlace into the llada demo sample frame for sanity check
-from PIL import Image
-from torchvision.transforms.functional import to_tensor
-import numpy as np
-image = Image.open('/home/fredhong/diffusion_lm/LaViDa/images/dog.png').convert('RGB')
+# # HERE SWITCH THE RAW PickNPlace into the llada demo sample frame for sanity check
+# from PIL import Image
+# from torchvision.transforms.functional import to_tensor
+# import numpy as np
+# image = Image.open('/home/fredhong/diffusion_lm/LaViDa/images/dog.png').convert('RGB')
 
 # lavida_kwargs = {'vision_kwargs': {'mm_vision_tower': 'google/siglip-so400m-patch14-384', 'mm_resampler_type': None, 'mm_projector_type': 'mlp2x_gelu', 'mm_hidden_size': 1152, 'use_mm_proj': True}, 'device_map': 'cuda:0', 'torch_dtype': torch.bfloat16}
 # lavida_model = DiffusionLMBackbone.from_pretrained('jacklishufan/lavida-llada-v1.0-instruct', low_cpu_mem_usage=True, local_files_only=True, attn_implementation='eager', **lavida_kwargs)
@@ -87,8 +95,8 @@ policy = Gr00tPolicy(
     modality_config=modality_config,
     modality_transform=modality_transform,
     device=device,
-    model_type="lavida",
-    # model_type=VLM_MODEL  # comment out this line then go for default
+    # model_type="lavida",
+    model_type=VLM_MODEL  # comment out this line then go for default
 )
 
 # print out the policy model architecture

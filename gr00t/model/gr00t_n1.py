@@ -33,6 +33,8 @@ from .backbone import DiffusionLMBackbone
 from .backbone.llada.mm_utils import process_images
 
 from accelerate import load_checkpoint_and_dispatch
+import torchvision.transforms.functional as F
+
 
 BACKBONE_FEATURE_KEY = "backbone_features"
 ACTION_KEY = "action_pred"
@@ -93,8 +95,8 @@ class GR00T_N1(PreTrainedModel):
                 'torch_dtype': torch.bfloat16
             }
             self.backbone = DiffusionLMBackbone.from_pretrained(
-                # "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37",
-                "jacklishufan/lavida-llada-v1.0-instruct",
+                "/data0/fredhong/hf_models/hub/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37/",
+                # "jacklishufan/lavida-llada-v1.0-instruct",
                 low_cpu_mem_usage=True, local_files_only=True, 
                 attn_implementation='eager', 
                 **lavida_kwargs
@@ -104,13 +106,14 @@ class GR00T_N1(PreTrainedModel):
             self.backbone.tie_weights()
             self.backbone = load_checkpoint_and_dispatch(
                 self.backbone, 
-                "/data1/fredhong/hf_models/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37", 
+                "/data0/fredhong/hf_models/hub/models--jacklishufan--lavida-llada-v1.0-instruct/snapshots/814b2e364e82390f03df451bdf4e81e8ba8eab37/", 
                 device_map='auto'
             )
-            raw_lavida_wid, raw_lavida_hei, img_size = 692, 704, 256
-            self.backbone.config.image_grid_pinpoints = \
-            list(map(lambda l: [int(l[0] / raw_lavida_wid * img_size), int(l[1] / raw_lavida_hei * img_size)], self.backbone.config.image_grid_pinpoints))
-            self.backbone.config.scale_ratio = raw_lavida_wid / img_size  # this for tuning the patch division in process_anyres_image()
+            # [to be removed here] as mentioned in get_action(), a img with size smaller than vision_tower.img_size, cannot be patchified and proc by lavida vision tower, therefore don't shrink the ratio of image grid pin point here
+            # raw_lavida_wid, raw_lavida_hei, img_size = 692, 704, 256
+            # self.backbone.config.image_grid_pinpoints = \
+            # list(map(lambda l: [int(l[0] / raw_lavida_wid * img_size), int(l[1] / raw_lavida_hei * img_size)], self.backbone.config.image_grid_pinpoints))
+            # self.backbone.config.scale_ratio = raw_lavida_wid / img_size  # this for tuning the patch division in process_anyres_image()
         self.backbone_type = config.vlm_model_type
         action_head_cfg = FlowmatchingActionHeadConfig(**config.action_head_cfg)
         self.action_head = FlowmatchingActionHead(action_head_cfg)
@@ -220,17 +223,55 @@ class GR00T_N1(PreTrainedModel):
             # img transform: originally for PIL, now scale pixel_values back to (0,1) for the sake of image proc siglip encoder
             image_to_process = ((inputs["pixel_values"] + 1) * 255 / 2).to(torch.uint8)
 
+            # TODO move this transform to gr00t.transform
+            if image_to_process.shape[-1] < 384:  # a img with size smaller than vision_tower.img_size, cannot be patchified and proc by lavida vision tower
+                image_to_process = F.resize(image_to_process, [704])
+
             # lavida img processing discarding the llava patchifying, to follow eagle2 siglip enc fashion
-            # # lavida processor to patchify the input frames
-            # image_processor = self.backbone.get_vision_tower().image_processor
-            # _config = self.backbone.config
-            # image_tensor = process_images(image_to_process, image_processor, _config)
-            # image_tensor = [_image.to(dtype=torch.bfloat16, device="cuda") for _image in image_tensor]
-            # backbone_inputs["pixel_values"] = image_tensor[0]
+            # TODO lavida processor now not patchifying the input frames, but scale the input img to correct lavida/llava res
+            image_processor = self.backbone.get_vision_tower().image_processor
+            _config = self.backbone.config
+            # _config.image_aspect_ratio = "scale2_384"  # this line deactivates patchifying
+            image_tensor = process_images(image_to_process, image_processor, _config)
+            image_tensor = [_image.to(dtype=torch.bfloat16, device="cuda") for _image in image_tensor]
+            if image_tensor[0].dim() == 3:  # the image tensor must be wrapped in a list, accord with prepare_inputs_labels_for_multimodal
+                print("rewrapping image tensor into a list of tensor")
+                image_tensor = [image_tensor[0][None]]  # it's one img with chw shape, needs to be flattened to accord with siglip
+            backbone_inputs["pixel_values"] = image_tensor
             backbone_inputs["raw_image_sizes"] = [image_to_process.shape[-2:]]
 
-        # Because the behavior of backbones remains the same for training and inference, we can use `forward` for backbones.
-        backbone_outputs = self.backbone(backbone_inputs)
+            logits = self.backbone.generate(
+                backbone_inputs.input_ids,
+                return_logits=True,
+                images=image_tensor,
+                # image_sizes=backbone_inputs.raw_image_sizes,
+                image_sizes=[(704, 704)],
+                do_sample=False,
+                temperature=0.1,
+                max_new_tokens=64,
+                block_length=64,
+                step_ratio=0.5, # 32 steps
+                tokenizer=None,
+                prefix_lm=True,
+                verbose=True,
+                schedule='shift',
+            )
+            # TODO here needs a re-TRAINED linear layer to act as projector of between embedding dims. See Eagle2 backbone
+            #   and for DiffusionBackbone, this linear should be `Linear(infeat=126464, outfeat=1536)`
+            #   rather than `Linear(infeat=2048, outfeat=1536)` as in Eagle2
+            # logits = self.linear(logits)
+            logits = logits[..., -1536:]
+
+            backbone_outputs = BatchFeature(
+                data={
+                    "backbone_features": logits,  # return_dict=False, and no label passed in, thus the first tensor is the outptu logits
+                }
+            )
+        else:  # for eagle2
+            # Because the behavior of backbones remains the same for training and inference, we can use `forward` for backbones.
+            backbone_outputs = self.backbone(backbone_inputs)
+        
+        # backbone output feat requires shape of torch.Size([1, n_id, 1536])
         action_head_outputs = self.action_head.get_action(backbone_outputs, action_inputs)
         self.validate_data(action_head_outputs, backbone_outputs, is_training=False)
         return action_head_outputs

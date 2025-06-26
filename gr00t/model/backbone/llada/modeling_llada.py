@@ -1431,9 +1431,6 @@ class LLaDAModel(nn.Module):
         if self.config.scale_logits:
             logits.mul_(1 / math.sqrt(self.config.d_model))
 
-        # TODO here doing some tensor manipulation, for the input channels' width 126464 
-        # shrink 3/247 ratio into 1536, for the 
-
         return LLaDAOutput(logits=logits, attn_key_values=attn_key_values, hidden_states=tuple(all_hidden_states) if output_hidden_states else None)  # type: ignore[arg-type]
 
 

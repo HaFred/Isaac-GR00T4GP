@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 from transformers import AutoConfig, AutoModelForCausalLM
 from transformers.feature_extraction_utils import BatchFeature
 # from dataclasses import dataclass
+from .llada.generate import generate as llada_generate
 from .llada.modeling_llada import LLaDAModel, LLaDAModelLM, LLaDAConfig, create_model_config_from_pretrained_config
 from .llada.llava_arch import LlavaMetaModel, LlavaMetaForCausalLM
 from transformers.generation.utils import GenerateOutput

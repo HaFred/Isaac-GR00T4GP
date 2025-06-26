@@ -282,7 +282,7 @@ def get_anyres_image_grid_shape(image_size, grid_pinpoints, patch_size):
 import os
 DEBUG_PRINT_IMAGE_RES = os.environ.get("DEBUG_PRINT_IMAGE_RES", False)
 DEBUG_FIX_PADDING = os.environ.get("DEBUG_FIX_PADDING", False)
-def process_anyres_image(image, processor, grid_pinpoints, scale_ratio=None):
+def process_anyres_image(image, processor, grid_pinpoints):
     """
     Process an image with variable resolutions.
 
@@ -332,14 +332,14 @@ def process_anyres_image(image, processor, grid_pinpoints, scale_ratio=None):
         print(best_resolution)
     image_padded = resize_and_pad_image(image, best_resolution)
 
-    # TODO adjust crops isze here dynacmically, as the proc is from the llada, for patching eagle2 robot input img
-    if _is_img_tensor:
-        patches = divide_to_patches(image_padded, int(processor.crop_size["height"] /  scale_ratio) if scale_ratio is not None else processor.crop_size["height"])
-    else:
-        patches = divide_to_patches(image_padded, processor.crop_size["height"])
+    # [to be removed] adjust crops isze here dynacmically, as the proc is from the llada, for patching eagle2 robot input img
+    # if _is_raw_input_smaller:
+    #     patches = divide_to_patches(image_padded, int(processor.crop_size["height"] /  scale_ratio) if scale_ratio is not None else processor.crop_size["height"])
+    # else:
 
-    # FIXME: this seems to be a bug that it resizes instead of pad.
-    # but to keep it consistent with previous, i will keep it as it is
+    # the patches need to be 384x384, no negotiable even for eagle2 type input, coz the vision_tower enc takes only 384 res feature
+    patches = divide_to_patches(image_padded, processor.crop_size["height"])
+
     # TODO: uncomment below to ablate with the padding
     if isinstance(processor.size, dict):
         shortest_edge = processor.size["shortest_edge"]
@@ -354,9 +354,6 @@ def process_anyres_image(image, processor, grid_pinpoints, scale_ratio=None):
     image_patches = [processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0] for image_patch in image_patches]
     return torch.stack(image_patches, dim=0)
 
-
-# def load_image_from_base64(image):
-#     return Image.open(BytesIO(base64.b64decode(image)))
 
 
 def expand2square_with_pil(pil_img, background_color):
@@ -400,12 +397,7 @@ def process_images(images: Tensor, image_processor, model_cfg):
             new_images.append(image)
     elif image_aspect_ratio == "anyres" or (image_aspect_ratio is not None and "anyres_max" in image_aspect_ratio):
         for image in images:
-            if isinstance(image, Tensor):
-                image = process_anyres_image(image, image_processor, model_cfg.image_grid_pinpoints, model_cfg.scale_ratio)
-            elif isinstance(image, Image.Image):
-                image = process_anyres_image(image, image_processor, model_cfg.image_grid_pinpoints)
-            else:
-                raise TypeError(f"Unsupported image type: {type(image)}. Expected PIL.Image.Image or torch.Tensor.")
+            image = process_anyres_image(image, image_processor, model_cfg.image_grid_pinpoints)
             new_images.append(image)
     elif image_aspect_ratio == "crop_split":
         for image in images:
@@ -415,6 +407,10 @@ def process_images(images: Tensor, image_processor, model_cfg):
         for image in images:
             image = expand2square(image, tuple(int(x * 255) for x in image_processor.image_mean))
             image = image_processor.preprocess(image, return_tensors="pt")["pixel_values"][0]
+            new_images.append(image)
+    elif image_aspect_ratio == "scale2_384":
+        for image in images:
+            image = resize_and_pad_image(image, (384, 384))
             new_images.append(image)
     else:
         return image_processor.preprocess(images, return_tensors="pt")["pixel_values"]
