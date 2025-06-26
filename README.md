@@ -41,7 +41,7 @@
 
 * TTS for VLA with the visual CoT included, the idea is to mitigate the redundant computations in VLA, as shown [here](gr00t/README.md). 
 * An evaluation between the gt actions and the policy inferred actions can be found [here](getting_started/1.1_inference_vs_gt.ipynb).
-* The **GR00T4GP** VLA model for the N1 variant can be found [here](https://github.com/HaFred/Isaac-GR00T4GP/tree/gr00t-n1/gr00t), we also provided the inference script down there.
+* The **GR00T4GP** VLA model for the N1 variant can be found [here](https://github.com/HaFred/Isaac-GR00T4GP/blob/gr00t-n1/getting_started/1.2_inferenceGP_vs_gt.ipynb), we also provided the inference script down [here](https://github.com/HaFred/Isaac-GR00T4GP/tree/gr00t-n1/gr00t).
 
 ### TODO List
 
