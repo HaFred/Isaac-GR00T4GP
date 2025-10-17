@@ -1,6 +1,8 @@
 ## CSI Isaac GR00T N1
 
 > [!NOTE]
+> What is GP? GP stands for GPU poor, which is kinda sarcastic as we put on emphasizing higher and higher GPU demand. In this project, we develop the **GR00T4GP** by adopting diffusion LLM in the original GR00T model to achieve tremendous throughput gain with negligible accuracy loss.
+>
 > We are supporting a domestic version of GR00T N1 model. And we are developing the GP version of rendering/visualization/SFT of the data and model.
 
 ### Enhancements
